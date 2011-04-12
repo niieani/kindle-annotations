@@ -19,29 +19,52 @@ package de.berber.kindle.annotator;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 
+/**
+ * Parent of all annotations. An annotation belongs to a particular page and
+ *   can be converted into a {@link PDAnnotation}.
+ *   
+ * @author Bernhard J. Berger
+ */
 public abstract class Annotation {
+	/**
+	 * The log instance
+	 */
+	private final static Logger LOG = Logger.getLogger(Annotation.class);
+		
+	/**
+	 * Zero-based page number of the annotation
+	 */
 	private final int page;
 	
 	protected Annotation(int page) {
 		this.page = page;
 	}
 	
-	public int getPage() {
-		return this.page;
-	}
-	
+	/**
+	 * Checks whether the current belongs to the page {@code currentPageNumber}
+	 *  and adds the annotation in such an case.
+	 * 
+	 * @param currentPageNumber The page number of {@code page}.
+	 * @param page The pdf page.
+	 */
 	@SuppressWarnings("unchecked")
-	public void toPDAnnotation(int currentPageNumber, PDPage page) throws IOException {
+	public void toPDAnnotation(int currentPageNumber, PDPage page) {
 		if(this.page != currentPageNumber) {
 			return;
 		}
 		
-		final PDAnnotation annotation = toPDAnnotation(page);
-		if(annotation != null) {
-			((List<PDAnnotation>)page.getAnnotations()).add(annotation);
+		try {
+			final List<PDAnnotation> annotations = ((List<PDAnnotation>)page.getAnnotations());
+			final PDAnnotation annotation = toPDAnnotation(page);
+			if(annotation != null) {
+				annotations.add(annotation);
+			}
+		} catch(IOException e) {
+			LOG.error("Cannot read annotations");
 		}
 	}
 

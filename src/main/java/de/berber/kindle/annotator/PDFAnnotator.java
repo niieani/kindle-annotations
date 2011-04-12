@@ -34,10 +34,14 @@ import org.apache.pdfbox.pdmodel.PDPage;
 /**
  * PDFAnnotator main class if you use it as an standalone application.
  * 
- * @author Bernhard Berger
+ * @author Bernhard J. Berger
  */
 public class PDFAnnotator {
-
+	/**
+	 * The log instance
+	 */
+	private final static Logger LOG = Logger.getLogger(PDFAnnotator.class);
+	
 	private final File pdfFile;
 	private final File outFile;
 
@@ -55,7 +59,7 @@ public class PDFAnnotator {
 	 * 
 	 * java -jar pdfannotator.jar input.pdf [output.pdf]
 	 */
-	public static void main(String[] args) throws FileNotFoundException, IOException, COSVisitorException {
+	public static void main(String[] args) {
 		try {
 			PatternLayout layout = new PatternLayout("%d{ISO8601} %-5p [%t] %c: %m%n");
 			ConsoleAppender consoleAppender = new ConsoleAppender(layout);
@@ -79,24 +83,35 @@ public class PDFAnnotator {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void run() throws FileNotFoundException, IOException, COSVisitorException {
+	private void run() {
 		final List<Annotation> annotations = new KindleAnnotationReader(pdfFile).read();
 		
 		// annotate pdf
-		final PDFParser parser = new PDFParser(new FileInputStream(pdfFile));
-		parser.parse();
-		final PDDocument inDocument = parser.getPDDocument();
-		
-		int pageNumber = 0;
-		for(PDPage page : (List<PDPage>)inDocument.getDocumentCatalog().getAllPages()) {
-			for(Annotation dxAnn : annotations) {
-				dxAnn.toPDAnnotation(pageNumber, page);
+		try {
+			final PDFParser parser = new PDFParser(new FileInputStream(pdfFile));
+			parser.parse();
+			final PDDocument inDocument = parser.getPDDocument();
+			
+			int pageNumber = 0;
+			for(PDPage page : (List<PDPage>)inDocument.getDocumentCatalog().getAllPages()) {
+				for(Annotation dxAnn : annotations) {
+					dxAnn.toPDAnnotation(pageNumber, page);
+				}
+				
+				pageNumber++;
 			}
 			
-			pageNumber++;
+			inDocument.save(outFile.toString());		
+			inDocument.close();
+		} catch(FileNotFoundException e) {
+			LOG.error("Could not find input file " + pdfFile);
+			System.exit(1);
+		} catch(IOException e) {
+			LOG.error("IOError while writing result file " + outFile);
+			System.exit(1);
+		} catch (COSVisitorException e) {
+			LOG.error("PDFBox error while storing result file " + outFile);
+			System.exit(1);
 		}
-		
-		inDocument.save(outFile.toString());		
-		inDocument.close();
 	}
 }

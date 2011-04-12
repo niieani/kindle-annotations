@@ -23,9 +23,9 @@ import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText;
 
 /**
- * A 
- * @author berber
- *
+ * A comment is some text added to the document.
+ * 
+ * @author Bernhard J. Berger
  */
 public class Comment extends Annotation {
 	/**

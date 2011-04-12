@@ -20,6 +20,11 @@ import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 
+/**
+ * A marking is a colored text area.
+ * 
+ * @author Bernhard J. Berger
+ */
 public class Marking extends Annotation {
 	/**
 	 * The log instance

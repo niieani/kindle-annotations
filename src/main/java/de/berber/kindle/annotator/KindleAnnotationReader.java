@@ -27,11 +27,14 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 /**
- * Reader for dx annotation files.
+ * Reader for Kindle annotation files.
  *
- * @author Bernhard Berger
+ * @author Bernhard J. Berger
  */
 public class KindleAnnotationReader {
+	/**
+	 * Magic file header value
+	 */
 	private static final int MAGIC_VALUE = 0xDEADCABB;
 
 	/**
@@ -49,6 +52,11 @@ public class KindleAnnotationReader {
 	 */
 	private DataInputStream pdrStream;
 	
+	/**
+	 * Creates a new annotation reader for the kindle device. 
+	 * 
+	 * @param pdfFile The pdf file you want to read annotations for.
+	 */
 	public KindleAnnotationReader(final File pdfFile) {
 		pdrFile = new File(pdfFile.toString().substring(0, pdfFile.toString().length() - 1) + "r");
 
@@ -57,6 +65,11 @@ public class KindleAnnotationReader {
 		}
 	}
 
+	/**
+	 * Reads the pdr file and extracts all annotation information.
+	 *  
+	 * @return A list of annotations.
+	 */
 	public List<Annotation> read() {
 		final List<Annotation> result = new LinkedList<Annotation>();
 
@@ -83,13 +96,11 @@ public class KindleAnnotationReader {
 			final int numberOfMarkings = pdrStream.readShort();
 			LOG.info("Number of markings " + numberOfMarkings);
 			
-			skipBytes(1); // skipping unknown data
-			
 			for(int i = 0; i < numberOfMarkings; ++i) {
 				int page = 0; // TODO read page number
 				
 				// read start
-				skipBytes(7);                        // skipping unknown data
+				skipBytes(8);                        // skipping unknown data
 				readPascalString();                  // skipping pdfloc entry
 				skipBytes(4);                        // skipping unknown data
 				double x1 = pdrStream.readDouble(),  // start x
@@ -101,12 +112,12 @@ public class KindleAnnotationReader {
 				skipBytes(4);                        // skipping unknown data
 				double x2 = pdrStream.readDouble(),  // end x
 			           y2 = pdrStream.readDouble();  // end y
-				skipBytes(3);                        // skipping unknown data
+				skipBytes(2);                        // skipping unknown data
 				
 				result.add(new Marking(page, x1, y1, x2, y2));
 			}
 
-			skipBytes(1);                            // skipping unknown data
+			skipBytes(2);                            // skipping unknown data
 			int numberOfComments = pdrStream.readShort();
 			LOG.info("Number of comments " + numberOfComments);
 
@@ -122,6 +133,8 @@ public class KindleAnnotationReader {
 		        
 		        result.add(new Comment(page, x, y, content));
 			}
+			
+			LOG.info("Number of available bytes " + pdrStream.available());
 		} catch (FileNotFoundException e) {
 			LOG.error("Cannot find pdr-file " + pdrFile);
 		} catch (IOException e) {
