@@ -16,9 +16,16 @@
  */
 package de.berber.kindle.annotator;
 
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.color.PDGamma;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationTextMarkup;
 
 /**
  * A marking is a colored text area.
@@ -30,25 +37,32 @@ public class Marking extends Annotation {
 	 * The log instance
 	 */
 	private final static Logger LOG = Logger.getLogger(Marking.class);
-	private final double x1;
-	private final double y1;
-	private final double x2;
-	private final double y2;
+	private final double leftXFactor;
+	private final double lowerYFactor;
+	private final double rightXFactor;
+	private final double upperYFactor;
+	private int page2;
 
-	public Marking(int page, double x1, double y1, double x2, double y2) {
-		super(page);
+	public Marking(int page1, double x1, double y1, int page2, double x2, double y2) {
+		super(page1);
+		this.page2 = page2;
 		
-		this.x1 = x1;
-		this.y1 = y1;
-		this.x2 = x2;
-		this.y2 = y2;
+		checkFactorValue(x1);
+		checkFactorValue(y1);
+		checkFactorValue(x2);
+		checkFactorValue(y2);
+		
+		this.leftXFactor  = x1;
+		this.lowerYFactor = y1;
+		this.rightXFactor = x2;
+		this.upperYFactor = y2;
 		
 	}
 
 	@Override
 	protected PDAnnotation toPDAnnotation(final PDPage page)  {
-		LOG.info("Creating marking " + x1 + "/" + y1 + " -> " + x2 + "/" + y2);
-		/* TODO Fix position translation
+		LOG.info("Creating marking " + leftXFactor + "/" + lowerYFactor + " -> " + rightXFactor + "/" + upperYFactor);
+
 		try {
 			final PDGamma colourBlue = new PDGamma();
 			colourBlue.setB(1);
@@ -61,14 +75,14 @@ public class Marking extends Annotation {
 			txtMark.setConstantOpacity((float)0.2);   // Make the highlight 20% transparent
 	
 			// Set the rectangle containing the markup
-			final PDRectangle cropBox = page.getCropBox();
+			final PDRectangle cropBox = page.getTrimBox();
 			
 			final PDRectangle position = new PDRectangle();
-	        position.setLowerLeftX ((float)(cropBox.getLowerLeftX() + x1 * (cropBox.getUpperRightX() - cropBox.getLowerLeftX())));
-	        position.setUpperRightX((float)(cropBox.getLowerLeftX() + x2 * (cropBox.getUpperRightX() - cropBox.getLowerLeftX())));
+	        position.setLowerLeftX ((float)(cropBox.getLowerLeftX() + leftXFactor * (cropBox.getUpperRightX() - cropBox.getLowerLeftX())));
+	        position.setUpperRightX((float)(cropBox.getLowerLeftX() + rightXFactor * (cropBox.getUpperRightX() - cropBox.getLowerLeftX())));
 	
-	        position.setLowerLeftY ((float)(cropBox.getUpperRightY() - (y1) * (cropBox.getUpperRightY() - cropBox.getLowerLeftY())  - textHeight * 1000));
-	        position.setUpperRightY((float)(cropBox.getUpperRightY() - (y2) * (cropBox.getUpperRightY() - cropBox.getLowerLeftY())));
+	        position.setLowerLeftY ((float)(cropBox.getUpperRightY() - (lowerYFactor + ((upperYFactor - lowerYFactor == 0.0) ? 0.025 : 0.00)) * (cropBox.getUpperRightY() - cropBox.getLowerLeftY())));
+	        position.setUpperRightY((float)(cropBox.getUpperRightY() - (upperYFactor) * (cropBox.getUpperRightY() - cropBox.getLowerLeftY())));
 	
 			txtMark.setRectangle(position);
 			// work out the points forming the four corners of the annotations
@@ -77,24 +91,21 @@ public class Marking extends Annotation {
 			// It's what acrobat 7 does and displays properly!
 	
 	        float[] quads = new float[8];
-	
-			quads[0] = position.getLowerLeftX();  // x1
-			quads[1] = position.getUpperRightY(); // y1
-			quads[2] = position.getUpperRightX(); // x2
-			quads[3] = quads[1]; // y2
-			quads[4] = quads[0];  // x3
-			quads[5] = position.getLowerLeftY(); // y3
-			quads[6] = quads[2]; // x4
-			quads[7] = quads[5]; // y5
-	
+	        
+			quads[0] = position.getLowerLeftX();   // x1
+			quads[1] = position.getUpperRightY();  // y1
+			quads[2] = position.getUpperRightX();  // x2
+			quads[3] = position.getUpperRightY();  // y2
+			quads[4] = position.getLowerLeftX();   // x3
+			quads[5] = position.getLowerLeftY();   // y3
+			quads[6] = position.getUpperRightX();  // x4
+			quads[7] = position.getLowerLeftY();   // y5
+
 			txtMark.setQuadPoints(quads);
-			//txtMark.setContents("Hallo Welt");
 			
 			return txtMark;
 		} catch(IOException e) {
 			return null;
 		}
-		*/
-		return null;
 	}
 }

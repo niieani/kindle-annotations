@@ -69,4 +69,10 @@ public abstract class Annotation {
 	}
 
 	protected abstract PDAnnotation toPDAnnotation(final PDPage page);
+
+	protected final void checkFactorValue(final double factor) {
+		if(factor < 0.0 || factor > 1.0) {
+			LOG.warn("Factor is out of visible range: " + factor);
+		}
+	}
 }

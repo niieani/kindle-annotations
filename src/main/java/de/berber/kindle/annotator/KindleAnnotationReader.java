@@ -17,10 +17,14 @@
 package de.berber.kindle.annotator;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.text.DecimalFormat;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -41,7 +45,8 @@ public class KindleAnnotationReader {
 	 * The log instance
 	 */
 	private final static Logger LOG = Logger.getLogger(KindleAnnotationReader.class);
-			
+
+	
 	/**
 	 * Source of annotations
 	 */
@@ -52,16 +57,26 @@ public class KindleAnnotationReader {
 	 */
 	private DataInputStream pdrStream;
 	
+	private OutputStream debugStream = null;
+	
 	/**
 	 * Creates a new annotation reader for the kindle device. 
 	 * 
 	 * @param pdfFile The pdf file you want to read annotations for.
 	 */
-	public KindleAnnotationReader(final File pdfFile) {
+	public KindleAnnotationReader(final File pdfFile, final boolean debug) {
 		pdrFile = new File(pdfFile.toString().substring(0, pdfFile.toString().length() - 1) + "r");
 
 		if(!pdrFile.exists()) {
 			LOG.error("Cannot find pdr-file for " + pdfFile);
+		}
+
+		if(debug) {
+			try {
+				debugStream = new FileOutputStream(pdfFile.toString() + ".log");
+			} catch (FileNotFoundException e) {
+				debugStream = null;
+			}
 		}
 	}
 
@@ -91,48 +106,74 @@ public class KindleAnnotationReader {
 				return result;
 			}
 			
-			skipBytes(31); // skipping unknown data
+			writeDebug("[Magic String]\n");
 			
-			final int numberOfMarkings = pdrStream.readShort();
+			skipBytes(1);
+			int lastOpenedPage = readUnsigned32();
+			writeDebug("\n[Last opened page]\n");
+			skipBytes(24); // skipping unknown data
+			
+			final int numberOfMarkings = pdrStream.readInt();
 			LOG.info("Number of markings " + numberOfMarkings);
+			writeDebug("\n[Number of markings " + numberOfMarkings + "]\n");
 			
 			for(int i = 0; i < numberOfMarkings; ++i) {
-				int page = 0; // TODO read page number
-				
 				// read start
-				skipBytes(8);                        // skipping unknown data
+				skipBytes(1);                        // skipping unknown data
+				int page1 = pdrStream.readInt();      // reading page number
+				writeDebug(" [page]");
+				readPascalString();                  // page name
+				writeDebug(" [page name]");
 				readPascalString();                  // skipping pdfloc entry
+				writeDebug(" [pdfloc] ");
 				skipBytes(4);                        // skipping unknown data
 				double x1 = pdrStream.readDouble(),  // start x
 			           y1 = pdrStream.readDouble();  // start y
+				writeDebug(" [x1]");
+				writeDebug(" [y1]");
 
 				// read end
-				skipBytes(7);                        // skipping unknown data
+				int page2 = pdrStream.readInt();      // reading page number
+				writeDebug(" [page]");
+				readPascalString();                  // page name
+				writeDebug(" [page name]");
 				readPascalString();                  // skipping pdfloc entry
+				writeDebug(" [pdfloc] ");
 				skipBytes(4);                        // skipping unknown data
 				double x2 = pdrStream.readDouble(),  // end x
 			           y2 = pdrStream.readDouble();  // end y
+				writeDebug(" [x2]");
+				writeDebug(" [y2] ");
 				skipBytes(2);                        // skipping unknown data
+				writeDebug("\n");
 				
-				result.add(new Marking(page, x1, y1, x2, y2));
+				result.add(new Marking(page1, x1, y1, page2, x2, y2));
 			}
 
-			skipBytes(2);                            // skipping unknown data
-			int numberOfComments = pdrStream.readShort();
+			int numberOfComments = pdrStream.readInt();
 			LOG.info("Number of comments " + numberOfComments);
+			writeDebug("\n[Number of comments " + numberOfComments + "]\n");
 
 			for(int i = 0; i < numberOfComments; ++i) {
-				skipBytes(3);                        // skipping unknown data
-				int page = pdrStream.readShort();    // reading page number
-				skipBytes(3);                        // skipping unknown data
+				skipBytes(1);                        // skipping unknown data
+				int page = pdrStream.readInt();      // reading page number
+				writeDebug(" [page]");
+				readPascalString();                  // page name
+				writeDebug(" [page name]");
 				double x = pdrStream.readDouble(),   // reading x
 				       y = pdrStream.readDouble();   // reading y
+				writeDebug(" [x]");
+				writeDebug(" [y]");
 
 				readPascalString();                  // skipping pdfloc entry
+				writeDebug(" [pdfloc]");
 		        String content = readPascalString(); // reading comment
+				writeDebug(" [content]\n");
 		        
 		        result.add(new Comment(page, x, y, content));
 			}
+			
+			closeDebugStream();
 			
 			LOG.info("Number of available bytes " + pdrStream.available());
 		} catch (FileNotFoundException e) {
@@ -142,6 +183,26 @@ public class KindleAnnotationReader {
 		}
 		
 		return result;
+	}
+
+	private void closeDebugStream() {
+		if(debugStream != null) {
+			try {
+				debugStream.close();
+			} catch (IOException e) {
+				LOG.warn("Error while closing debug stream");
+			}
+		}
+	}
+
+	private void writeDebug(final String message) {
+		if(debugStream != null) {
+			try {
+				debugStream.write(message.getBytes());
+			} catch (IOException e) {
+				LOG.warn("Error while writing debug log");
+			}
+		}
 	}
 
 	private String readPascalString() throws IOException {
@@ -155,6 +216,25 @@ public class KindleAnnotationReader {
 	private void skipBytes(int byteCount) throws IOException {
 		byte skippedData[] = new byte[byteCount];
 		pdrStream.readFully(skippedData);
+		
+		if(debugStream != null) {
+			boolean first = true;
+			for(int index = 0; index < skippedData.length; ++ index) {
+				if(first) {
+					first = false;
+				} else {
+					debugStream.write(" ".getBytes());
+				}
+				
+				String hexString = Integer.toHexString(skippedData[index]);
+				if(hexString.length() == 1) {
+					hexString = "0" + hexString;
+				} else if(hexString.startsWith("ffffff")) {
+					hexString = hexString.substring(6, hexString.length());
+				}
+				debugStream.write(hexString.getBytes());
+			}
+		}
 	}
 
 	private int readUnsigned32() throws IOException {

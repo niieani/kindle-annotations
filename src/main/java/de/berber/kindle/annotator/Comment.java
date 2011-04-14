@@ -40,6 +40,9 @@ public class Comment extends Annotation {
 	public Comment(int page, double x, double y, final String text) {
 		super(page);
 		
+		checkFactorValue(x);
+		checkFactorValue(y);
+		
 		this.xFactor = x;
 		this.yFactor = y;
 		this.text = text;
@@ -56,7 +59,7 @@ public class Comment extends Annotation {
 		final PDAnnotationText textAnnotation = new PDAnnotationText();
 		textAnnotation.setContents(getText());
 		
-		final PDRectangle cropBox = page.getCropBox();
+		final PDRectangle cropBox = page.getTrimBox();
 		final PDRectangle position = new PDRectangle();
         position.setLowerLeftX ((float)(cropBox.getLowerLeftX() + xFactor * (cropBox.getUpperRightX() - cropBox.getLowerLeftX())));
         position.setUpperRightX((float)(cropBox.getLowerLeftX() + xFactor * (cropBox.getUpperRightX() - cropBox.getLowerLeftX())));

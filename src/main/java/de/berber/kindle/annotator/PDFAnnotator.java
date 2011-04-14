@@ -30,6 +30,7 @@ import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdfparser.PDFParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 /**
  * PDFAnnotator main class if you use it as an standalone application.
@@ -84,13 +85,15 @@ public class PDFAnnotator {
 
 	@SuppressWarnings("unchecked")
 	private void run() {
-		final List<Annotation> annotations = new KindleAnnotationReader(pdfFile).read();
+		final List<Annotation> annotations = new KindleAnnotationReader(pdfFile, true).read();
 		
 		// annotate pdf
 		try {
 			final PDFParser parser = new PDFParser(new FileInputStream(pdfFile));
 			parser.parse();
+			
 			final PDDocument inDocument = parser.getPDDocument();
+			//inDocument.decrypt(pass);
 			
 			int pageNumber = 0;
 			for(PDPage page : (List<PDPage>)inDocument.getDocumentCatalog().getAllPages()) {
@@ -101,6 +104,7 @@ public class PDFAnnotator {
 				pageNumber++;
 			}
 			
+			//inDocument.setAllSecurityToBeRemoved(true);
 			inDocument.save(outFile.toString());		
 			inDocument.close();
 		} catch(FileNotFoundException e) {
