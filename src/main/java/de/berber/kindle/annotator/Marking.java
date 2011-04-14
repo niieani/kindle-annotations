@@ -18,6 +18,7 @@ package de.berber.kindle.annotator;
 
 import java.io.IOException;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -42,9 +43,9 @@ public class Marking extends Annotation {
 	private final double rightXFactor;
 	private final double upperYFactor;
 	private int page2;
-
-	public Marking(int page1, double x1, double y1, int page2, double x2, double y2) {
-		super(page1);
+	
+	public Marking(final CompositeConfiguration cc, int page1, double x1, double y1, int page2, double x2, double y2) {
+		super(cc, "markings", page1);
 		this.page2 = page2;
 		
 		checkFactorValue(x1);
@@ -56,7 +57,6 @@ public class Marking extends Annotation {
 		this.lowerYFactor = y1;
 		this.rightXFactor = x2;
 		this.upperYFactor = y2;
-		
 	}
 
 	@Override
@@ -64,15 +64,14 @@ public class Marking extends Annotation {
 		LOG.info("Creating marking " + leftXFactor + "/" + lowerYFactor + " -> " + rightXFactor + "/" + upperYFactor);
 
 		try {
-			final PDGamma colourBlue = new PDGamma();
-			colourBlue.setB(1);
+			final PDGamma pdColor = getColor();
 			
 			final PDFont font = PDType1Font.HELVETICA_BOLD;
 			float textHeight = font.getFontHeight("Hg".getBytes(), 0, 2);
 			
 			final PDAnnotationTextMarkup txtMark = new PDAnnotationTextMarkup(PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT);
-			txtMark.setColour(colourBlue);
-			txtMark.setConstantOpacity((float)0.2);   // Make the highlight 20% transparent
+			txtMark.setColour(pdColor);
+			txtMark.setConstantOpacity(opacity);   // Make the highlight 20% transparent
 	
 			// Set the rectangle containing the markup
 			final PDRectangle cropBox = page.getTrimBox();

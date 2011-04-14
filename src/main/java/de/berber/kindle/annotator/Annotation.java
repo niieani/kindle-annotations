@@ -19,8 +19,10 @@ package de.berber.kindle.annotator;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.graphics.color.PDGamma;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 
 /**
@@ -39,9 +41,14 @@ public abstract class Annotation {
 	 * Zero-based page number of the annotation
 	 */
 	private final int page;
+	protected String color = "#0000FF";
+	protected float opacity = 0.2f;
+
 	
-	protected Annotation(int page) {
+	protected Annotation(final CompositeConfiguration cc, final String prefix, final int page) {
 		this.page = page;
+		color   = cc.getString(prefix+".color", color);
+		opacity = cc.getFloat(prefix+".opacity", opacity); 
 	}
 	
 	/**
@@ -74,5 +81,16 @@ public abstract class Annotation {
 		if(factor < 0.0 || factor > 1.0) {
 			LOG.warn("Factor is out of visible range: " + factor);
 		}
+	}
+
+	protected final PDGamma getColor() {
+		assert color.length() == 7 && color.startsWith("#");
+		final PDGamma color = new PDGamma();
+		
+		color.setR(Integer.parseInt(this.color.substring(1, 3),16) / 255f);
+		color.setG(Integer.parseInt(this.color.substring(3, 5),16) / 255f);
+		color.setB(Integer.parseInt(this.color.substring(5, 7),16) / 255f);
+		
+		return color;
 	}
 }

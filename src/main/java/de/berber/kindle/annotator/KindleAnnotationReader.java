@@ -17,17 +17,16 @@
 package de.berber.kindle.annotator;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.DecimalFormat;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
 
 /**
@@ -59,19 +58,22 @@ public class KindleAnnotationReader {
 	
 	private OutputStream debugStream = null;
 	
+	private final CompositeConfiguration cc;
+	
 	/**
 	 * Creates a new annotation reader for the kindle device. 
 	 * 
 	 * @param pdfFile The pdf file you want to read annotations for.
 	 */
-	public KindleAnnotationReader(final File pdfFile, final boolean debug) {
+	public KindleAnnotationReader(final CompositeConfiguration cc, final File pdfFile) {
 		pdrFile = new File(pdfFile.toString().substring(0, pdfFile.toString().length() - 1) + "r");
+		this.cc = cc;
 
 		if(!pdrFile.exists()) {
 			LOG.error("Cannot find pdr-file for " + pdfFile);
 		}
 
-		if(debug) {
+		if(cc.getBoolean("dumpDebugFile", false)) {
 			try {
 				debugStream = new FileOutputStream(pdfFile.toString() + ".log");
 			} catch (FileNotFoundException e) {
@@ -109,6 +111,7 @@ public class KindleAnnotationReader {
 			writeDebug("[Magic String]\n");
 			
 			skipBytes(1);
+			@SuppressWarnings("unused")
 			int lastOpenedPage = readUnsigned32();
 			writeDebug("\n[Last opened page]\n");
 			skipBytes(24); // skipping unknown data
@@ -126,7 +129,8 @@ public class KindleAnnotationReader {
 				writeDebug(" [page name]");
 				readPascalString();                  // skipping pdfloc entry
 				writeDebug(" [pdfloc] ");
-				skipBytes(4);                        // skipping unknown data
+				writeDebug("["+pdrStream.readFloat()+"]");
+				//skipBytes(4);                        // skipping unknown data
 				double x1 = pdrStream.readDouble(),  // start x
 			           y1 = pdrStream.readDouble();  // start y
 				writeDebug(" [x1]");
@@ -139,7 +143,8 @@ public class KindleAnnotationReader {
 				writeDebug(" [page name]");
 				readPascalString();                  // skipping pdfloc entry
 				writeDebug(" [pdfloc] ");
-				skipBytes(4);                        // skipping unknown data
+				writeDebug("["+pdrStream.readFloat()+"]");
+				//qskipBytes(4);                        // skipping unknown data
 				double x2 = pdrStream.readDouble(),  // end x
 			           y2 = pdrStream.readDouble();  // end y
 				writeDebug(" [x2]");
@@ -147,7 +152,7 @@ public class KindleAnnotationReader {
 				skipBytes(2);                        // skipping unknown data
 				writeDebug("\n");
 				
-				result.add(new Marking(page1, x1, y1, page2, x2, y2));
+				result.add(new Marking(cc, page1, x1, y1, page2, x2, y2));
 			}
 
 			int numberOfComments = pdrStream.readInt();
@@ -170,7 +175,7 @@ public class KindleAnnotationReader {
 		        String content = readPascalString(); // reading comment
 				writeDebug(" [content]\n");
 		        
-		        result.add(new Comment(page, x, y, content));
+		        result.add(new Comment(cc, page, x, y, content));
 			}
 			
 			closeDebugStream();

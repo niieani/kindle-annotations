@@ -16,9 +16,11 @@
  */
 package de.berber.kindle.annotator;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.color.PDGamma;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText;
 
@@ -37,8 +39,8 @@ public class Comment extends Annotation {
 	private final double yFactor;
 	private final String text;
 	
-	public Comment(int page, double x, double y, final String text) {
-		super(page);
+	public Comment(final CompositeConfiguration cc, int page, double x, double y, final String text) {
+		super(cc, "comments", page);
 		
 		checkFactorValue(x);
 		checkFactorValue(y);
@@ -46,7 +48,7 @@ public class Comment extends Annotation {
 		this.xFactor = x;
 		this.yFactor = y;
 		this.text = text;
-	}
+}
 
 	public String getText() {
 		return text;
@@ -56,8 +58,11 @@ public class Comment extends Annotation {
 	protected PDAnnotation toPDAnnotation(final PDPage page) {
 		LOG.info("Creating annotation " + xFactor + "/" + yFactor + " -> " + text);
 		
+		final PDGamma pdColor = getColor();
+
 		final PDAnnotationText textAnnotation = new PDAnnotationText();
 		textAnnotation.setContents(getText());
+		textAnnotation.setColour(pdColor);
 		
 		final PDRectangle cropBox = page.getTrimBox();
 		final PDRectangle position = new PDRectangle();

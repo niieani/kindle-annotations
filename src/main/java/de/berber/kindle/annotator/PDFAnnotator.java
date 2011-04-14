@@ -20,8 +20,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -30,7 +34,9 @@ import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdfparser.PDFParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.ExampleMode;
 
 /**
  * PDFAnnotator main class if you use it as an standalone application.
@@ -45,10 +51,12 @@ public class PDFAnnotator {
 	
 	private final File pdfFile;
 	private final File outFile;
+	private final CompositeConfiguration cc;
 
-	public PDFAnnotator(final String pdfFilename, final String outFilename) {
+	public PDFAnnotator(final CompositeConfiguration cc, final String pdfFilename, final String outFilename) {
 		this.pdfFile = new File(pdfFilename);
 		this.outFile = new File(outFilename);
+		this.cc = cc;
 		
 		assert pdfFile.exists() && pdfFile.canRead();
 	}
@@ -61,31 +69,72 @@ public class PDFAnnotator {
 	 * java -jar pdfannotator.jar input.pdf [output.pdf]
 	 */
 	public static void main(String[] args) {
+		final CompositeConfiguration cc = new CompositeConfiguration();
+		
 		try {
+			// configure logging
 			PatternLayout layout = new PatternLayout("%d{ISO8601} %-5p [%t] %c: %m%n");
 			ConsoleAppender consoleAppender = new ConsoleAppender(layout);
 			Logger.getRootLogger().addAppender(consoleAppender);
-			Logger.getRootLogger().setLevel(Level.DEBUG);
+			Logger.getRootLogger().setLevel(Level.WARN);
+
+			// read commandline
+			Options options = new Options();
+	        final CmdLineParser parser = new CmdLineParser(options);
+            parser.setUsageWidth(80);
+
+            try {
+            	// parse the arguments.
+            	parser.parseArgument(args);
+
+            	if (options.help) {
+            		parser.printUsage(System.err);
+            		return;
+            	}
+             } catch (CmdLineException e) {
+            	 // if there's a problem in the command line, 
+                 // you'll get this exception. this will report
+                 // an error message.
+                 System.err.println(e.getMessage());
+                 System.err.println("Usage:");
+                 // print the list of available options
+                 parser.printUsage(System.err);
+                 System.err.println();
+
+                 // print option sample. This is useful some time
+                 System.err.println("  Example: java -jar <jar> "
+                                 + parser.printExample(ExampleMode.ALL));
+
+                 return;
+             }
+			
+			// read configs
+			final URL defaultURL = PDFAnnotator.class.getClassLoader().getResource("de/berber/kindle/annotator/PDFAnnotator.default");
+
+			if(options.config != null) {
+				final File configFile = new File(options.config);
+				
+				if(!configFile.exists() || !configFile.canRead()) {
+					LOG.error("Specified config file does not exist.");
+				} else {
+					cc.addConfiguration(new PropertiesConfiguration(configFile));
+				}
+			}
+			
+			cc.addConfiguration(new PropertiesConfiguration(defaultURL));
+
+			Logger.getRootLogger().setLevel(Level.toLevel(cc.getString("debugLevel", "WARN")));
+			
+			new PDFAnnotator(cc, options.input, options.output).run();
+
 		} catch(Exception ex) {
 			ex.printStackTrace();
 		}
-		
-		if(args.length < 1 ) {
-			System.err.println("Please specify at least a pdf file.");
-			System.exit(1);
-		} else if(args.length > 2) {
-			System.err.println("Please specify at just an input and an output pdf file.");
-			System.exit(1);
-		}
-		
-		final String inputFilename = args[0];
-		final String outputFilename = args.length == 2 ? args[1] : args[0];
-		new PDFAnnotator(inputFilename, outputFilename).run();
 	}
 
 	@SuppressWarnings("unchecked")
 	private void run() {
-		final List<Annotation> annotations = new KindleAnnotationReader(pdfFile, true).read();
+		final List<Annotation> annotations = new KindleAnnotationReader(cc, pdfFile).read();
 		
 		// annotate pdf
 		try {
