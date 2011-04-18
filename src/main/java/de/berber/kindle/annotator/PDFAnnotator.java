@@ -24,7 +24,6 @@ import java.net.URL;
 import java.util.List;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
@@ -124,8 +123,50 @@ public class PDFAnnotator {
 			cc.addConfiguration(new PropertiesConfiguration(defaultURL));
 
 			Logger.getRootLogger().setLevel(Level.toLevel(cc.getString("debugLevel", "WARN")));
+		
+			final File inputFile = new File(options.input);
+			File outputFile = new File(options.output);
 			
-			new PDFAnnotator(cc, options.input, options.output).run();
+			if(!inputFile.exists()) {
+				LOG.fatal("Input file does not exist.");
+				System.exit(1);
+			}
+			
+			if(inputFile.isFile()) {
+				if(outputFile.exists() && outputFile.isDirectory()) {
+					outputFile = new File(outputFile.toString() + File.separator + inputFile.getName());
+				}
+				new PDFAnnotator(cc, options.input, options.output).run();
+			} else if(inputFile.isDirectory()) {
+				if(!outputFile.exists() || !outputFile.isDirectory()) {
+					LOG.error("Output file must be an existing directory.");
+					System.exit(1);
+				}
+				
+				final File [] inputFiles = inputFile.listFiles();
+				
+				for(int index = 0; index < inputFiles.length; ++index) {
+					final File currentFile = inputFiles[index];
+					
+					if(!currentFile.isFile()) {
+						continue;
+					}
+					
+					if(!currentFile.toString().endsWith(".pdf")) {
+						continue;
+					}
+					
+					final File pdrFile = new File(currentFile.toString().substring(0, currentFile.toString().lastIndexOf('.')) + ".pdr");
+					
+					if(!pdrFile.exists()) {
+						continue;
+					}
+					
+					final File output = new File(outputFile + File.separator + currentFile.getName());
+					LOG.info(currentFile.toString() + " --> " + output);
+					new PDFAnnotator(cc, currentFile.toString(), output.toString()).run();
+				}
+			}
 
 		} catch(Exception ex) {
 			ex.printStackTrace();
