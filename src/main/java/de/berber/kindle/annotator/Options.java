@@ -9,9 +9,9 @@ public class Options {
 	@Option(name="-c", usage="Specify a configuration properties file", aliases={"--config"})
 	public String config = null; 
 	
-	@Option(name="-in", usage="Specify an input file or directory.", aliases={"--input"}, required=true)
+	@Option(name="-in", usage="Specify an input PDF file or an input directory.", aliases={"--input"}, required=true)
 	public String input;
 
-	@Option(name="-out", usage="Specify an output file or directory.", aliases={"--output"}, required=true)
+	@Option(name="-out", usage="Specify an output PDF file or an output directory.", aliases={"--output"}, required=true)
 	public String output;
 }
