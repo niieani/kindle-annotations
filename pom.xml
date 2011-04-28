@@ -4,7 +4,7 @@
   <groupId>de.berber</groupId>
   <artifactId>kindle-annotator</artifactId>
   <packaging>jar</packaging>
-  <version>0.3</version>
+  <version>0.4</version>
   <name>Kindle PDF Annotator</name>
 
   <build>
