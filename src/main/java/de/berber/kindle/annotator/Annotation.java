@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.graphics.color.PDGamma;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 
 /**
  * Parent of all annotations. An annotation belongs to a particular page and
@@ -61,17 +62,18 @@ public abstract class Annotation {
 	 *  and adds the annotation in such an case.
 	 * 
 	 * @param currentPageNumber The page number of {@code page}.
+	 * @param documentOutline The pdf outline
 	 * @param page The pdf page.
 	 */
 	@SuppressWarnings("unchecked")
-	public void toPDAnnotation(int currentPageNumber, PDPage page) {
+	public void toPDAnnotation(int currentPageNumber, final PDDocumentOutline documentOutline, final PDPage page) {
 		if(this.page != currentPageNumber) {
 			return;
 		}
 		
 		try {
 			final List<PDAnnotation> annotations = ((List<PDAnnotation>)page.getAnnotations());
-			final PDAnnotation annotation = toPDAnnotation(page);
+			final PDAnnotation annotation = toPDAnnotation(documentOutline, page);
 			if(annotation != null) {
 				annotations.add(annotation);
 			}
@@ -80,7 +82,7 @@ public abstract class Annotation {
 		}
 	}
 
-	protected abstract PDAnnotation toPDAnnotation(final PDPage page);
+	protected abstract PDAnnotation toPDAnnotation(final PDDocumentOutline documentOutline, final PDPage page);
 
 	protected final void checkFactorValue(final double factor) {
 		if(factor < 0.0 || factor > 1.0) {

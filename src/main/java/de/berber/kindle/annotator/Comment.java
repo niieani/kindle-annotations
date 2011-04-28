@@ -23,6 +23,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.color.PDGamma;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 
 /**
  * A comment is some text added to the document.
@@ -63,7 +64,7 @@ public class Comment extends Annotation {
 	}
 
 	@Override
-	protected PDAnnotation toPDAnnotation(final PDPage page) {
+	protected PDAnnotation toPDAnnotation(final PDDocumentOutline documentOutline, final PDPage page) {
 		LOG.info("Creating annotation " + xFactor + "/" + yFactor + " -> " + text);
 		
 		final PDGamma pdColor = getColor();

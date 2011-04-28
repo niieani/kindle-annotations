@@ -27,6 +27,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.color.PDGamma;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationTextMarkup;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 
 /**
  * A marking is a colored text area.
@@ -69,7 +70,7 @@ public class Marking extends Annotation {
 	}
 
 	@Override
-	protected PDAnnotation toPDAnnotation(final PDPage page)  {
+	protected PDAnnotation toPDAnnotation(final PDDocumentOutline documentOutline, final PDPage page)  {
 		LOG.info("Creating marking " + leftXFactor + "/" + lowerYFactor + " -> " + rightXFactor + "/" + upperYFactor);
 
 		try {

@@ -33,6 +33,7 @@ import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdfparser.PDFParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.ExampleMode;
@@ -184,11 +185,14 @@ public class PDFAnnotator {
 			
 			final PDDocument inDocument = parser.getPDDocument();
 			//inDocument.decrypt(pass);
+			final PDDocumentOutline documentOutline = inDocument.getDocumentCatalog().getDocumentOutline();
+			
+			assert documentOutline != null;
 			
 			int pageNumber = 0;
 			for(PDPage page : (List<PDPage>)inDocument.getDocumentCatalog().getAllPages()) {
 				for(Annotation dxAnn : annotations) {
-					dxAnn.toPDAnnotation(pageNumber, page);
+					dxAnn.toPDAnnotation(pageNumber, documentOutline, page);
 				}
 				
 				pageNumber++;

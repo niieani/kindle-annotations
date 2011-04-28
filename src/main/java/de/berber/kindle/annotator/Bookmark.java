@@ -20,6 +20,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 
 /**
  * A bookmark is a page marker. Therefore it needs no additional data.
@@ -37,10 +39,29 @@ public class Bookmark extends Annotation {
 	}
 
 	@Override
-	protected PDAnnotation toPDAnnotation(final PDPage page) {
-		// TODO Add a bookmark
+	protected PDAnnotation toPDAnnotation(final PDDocumentOutline documentOutline, final PDPage page) {
 		LOG.info("Creating bookmark");
+		PDOutlineItem bookmarks = documentOutline.getFirstChild();
+		
+		while(bookmarks != null) {
+			if("Bookmarks".equals(bookmarks.getTitle())) {
+				break;
+			}
+			
+			bookmarks = bookmarks.getNextSibling();
+		}
+		
+		if(bookmarks == null) {
+			bookmarks = new PDOutlineItem();
+			bookmarks.setTitle("Bookmarks");
+			documentOutline.appendChild(bookmarks);
+		}
 
+		final PDOutlineItem bookmark = new PDOutlineItem();
+		bookmark.setTitle("Bookmark on page " + getPage());
+		bookmark.setDestination(page);
+		bookmarks.appendChild(bookmark);
+		
 		return null;
 	}
 }
