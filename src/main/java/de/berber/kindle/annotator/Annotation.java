@@ -41,6 +41,11 @@ public abstract class Annotation {
 	 * Zero-based page number of the annotation
 	 */
 	private final int page;
+	
+	public int getPage() {
+		return page;
+	}
+
 	protected String color = "#0000FF";
 	protected float opacity = 0.2f;
 

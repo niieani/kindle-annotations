@@ -39,10 +39,19 @@ public class Marking extends Annotation {
 	 */
 	private final static Logger LOG = Logger.getLogger(Marking.class);
 	private final double leftXFactor;
+	public double getRightXFactor() {
+		return rightXFactor;
+	}
+
+	public double getUpperYFactor() {
+		return upperYFactor;
+	}
+
 	private final double lowerYFactor;
 	private final double rightXFactor;
 	private final double upperYFactor;
 	private int page2;
+	private Comment comment = null;
 	
 	public Marking(final CompositeConfiguration cc, int page1, double x1, double y1, int page2, double x2, double y2) {
 		super(cc, "markings", page1);
@@ -72,6 +81,10 @@ public class Marking extends Annotation {
 			final PDAnnotationTextMarkup txtMark = new PDAnnotationTextMarkup(PDAnnotationTextMarkup.SUB_TYPE_HIGHLIGHT);
 			txtMark.setColour(pdColor);
 			txtMark.setConstantOpacity(opacity);   // Make the highlight 20% transparent
+			
+			if(comment != null) {
+				txtMark.setContents(comment.getText());
+			}
 	
 			// Set the rectangle containing the markup
 			final PDRectangle cropBox = page.getTrimBox();
@@ -106,5 +119,9 @@ public class Marking extends Annotation {
 		} catch(IOException e) {
 			return null;
 		}
+	}
+	
+	public void addComment(final Comment comment) {
+		this.comment  = comment;
 	}
 }

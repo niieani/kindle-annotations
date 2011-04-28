@@ -36,6 +36,14 @@ public class Comment extends Annotation {
 	private final static Logger LOG = Logger.getLogger(Comment.class);
 	
 	private final double xFactor;
+	public double getXFactor() {
+		return xFactor;
+	}
+
+	public double getYFactor() {
+		return yFactor;
+	}
+
 	private final double yFactor;
 	private final String text;
 	

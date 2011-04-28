@@ -23,8 +23,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
@@ -208,7 +210,65 @@ public class KindleAnnotationReader {
 			LOG.error("IO error occured while reading " + pdrFile);
 		}
 		
+		mergeAnnotations(result);
+		
 		return result;
+	}
+
+	private void mergeAnnotations(final List<Annotation> annotations) {
+		final Map<Integer, Map<Double, Map<Double, List<Comment>>>> comments = new HashMap<Integer, Map<Double, Map<Double, List<Comment>>>>();
+
+		// build comment map
+		for(final Annotation annotation : annotations) {
+			if(!(annotation instanceof Comment)) {
+				continue;
+			}
+			
+			final Comment comment = (Comment)annotation;
+			
+			Map<Double, Map<Double, List<Comment>>> pageMap = comments.get(comment.getPage());
+			if(pageMap == null) {
+				pageMap = new HashMap<Double, Map<Double, List<Comment>>>();
+				comments.put(comment.getPage(), pageMap);
+			}
+			
+			Map<Double, List<Comment>> xFactorMap = pageMap.get(comment.getXFactor());
+			if(xFactorMap == null) {
+				xFactorMap = new HashMap<Double, List<Comment>>();
+				pageMap.put(comment.getXFactor(), xFactorMap);
+			}
+			
+			List<Comment> yFactorList = xFactorMap.get(comment.getYFactor());
+			if(yFactorList == null) {
+				yFactorList = new LinkedList<Comment>();
+				xFactorMap.put(comment.getYFactor(), yFactorList);
+			}
+			
+			yFactorList.add(comment);
+		}
+		
+
+		final List<Annotation> killSet = new LinkedList<Annotation>();
+		// match
+		for(final Annotation annotation : annotations) {
+			if(!(annotation instanceof Marking)) {
+				continue;
+			}
+			
+			final Marking marking = (Marking)annotation;
+			
+			try {
+				final List<Comment> commentList = comments.get(marking.getPage()).get(marking.getRightXFactor()).get(marking.getUpperYFactor());
+				final Comment comment = commentList.remove(0);
+				
+				marking.addComment(comment);
+				killSet.add(comment);
+			} catch(NullPointerException e) {
+				// no matchin element found
+			}
+		}
+		
+		annotations.removeAll(killSet);
 	}
 
 	private void closePdrStream() {
