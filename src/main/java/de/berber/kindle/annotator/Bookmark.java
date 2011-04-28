@@ -16,23 +16,31 @@
  */
 package de.berber.kindle.annotator;
 
-import org.kohsuke.args4j.Option;
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.log4j.Logger;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 
 /**
- * Command line options
+ * A bookmark is a page marker. Therefore it needs no additional data.
  * 
  * @author Bernhard J. Berger
  */
-public class Options {
-    @Option(name="-h", usage="Prints usage", aliases={"-help"})
-    boolean help;
-    
-	@Option(name="-c", usage="Specify a configuration properties file", aliases={"--config"})
-	public String config = null; 
+public class Bookmark extends Annotation {
+	/**
+	 * The log instance
+	 */
+	private final static Logger LOG = Logger.getLogger(Bookmark.class);
 	
-	@Option(name="-in", usage="Specify an input PDF file or an input directory.", aliases={"--input"}, required=true)
-	public String input;
+	public Bookmark(final CompositeConfiguration cc, int page) {
+		super(cc, "bookmark", page);
+	}
 
-	@Option(name="-out", usage="Specify an output PDF file or an output directory.", aliases={"--output"}, required=true)
-	public String output;
+	@Override
+	protected PDAnnotation toPDAnnotation(final PDPage page) {
+		// TODO Add a bookmark
+		LOG.info("Creating bookmark");
+
+		return null;
+	}
 }

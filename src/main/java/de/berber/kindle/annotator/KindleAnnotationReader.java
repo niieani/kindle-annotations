@@ -54,6 +54,7 @@ public class KindleAnnotationReader {
 	/**
 	 * PDR stream
 	 */
+	private FileInputStream fileStream;
 	private DataInputStream pdrStream;
 	
 	private OutputStream debugStream = null;
@@ -100,7 +101,8 @@ public class KindleAnnotationReader {
 		}
 		
 		try {
-			pdrStream = new DataInputStream(new FileInputStream(pdrFile));
+			fileStream = new FileInputStream(pdrFile);
+			pdrStream = new DataInputStream(fileStream);
 			
 			final int magic = readUnsigned32();
 			if(magic != MAGIC_VALUE) {
@@ -114,7 +116,21 @@ public class KindleAnnotationReader {
 			@SuppressWarnings("unused")
 			int lastOpenedPage = readUnsigned32();
 			writeDebug("\n[Last opened page]\n");
-			skipBytes(24); // skipping unknown data
+			
+			int numberOfBookmarks = readUnsigned32();
+			LOG.info("Number of bookmarks " + numberOfBookmarks);
+
+			for(int i = 0; i < numberOfBookmarks; ++i) {
+				skipBytes(1);                        // skipping unknown data
+				int page = pdrStream.readInt();      // reading page number
+				writeDebug(" [page]");
+				readPascalString();                  // page name
+				writeDebug(" [page name]\n");
+				
+				result.add(new Bookmark(cc, page));
+			}
+			
+			skipBytes(20); // skipping unknown data
 			
 			final int numberOfMarkings = pdrStream.readInt();
 			LOG.info("Number of markings " + numberOfMarkings);
@@ -178,9 +194,14 @@ public class KindleAnnotationReader {
 		        result.add(new Comment(cc, page, x, y, content));
 			}
 			
-			closeDebugStream();
+			int finalEntry = readUnsigned32();
+			
+			writeDebug("\n[Final entry " + finalEntry + "]");
 			
 			LOG.info("Number of available bytes " + pdrStream.available());
+
+			closePdrStream();
+			closeDebugStream();
 		} catch (FileNotFoundException e) {
 			LOG.error("Cannot find pdr-file " + pdrFile);
 		} catch (IOException e) {
@@ -188,6 +209,17 @@ public class KindleAnnotationReader {
 		}
 		
 		return result;
+	}
+
+	private void closePdrStream() {
+		try {
+			pdrStream.close();
+			fileStream.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 
 	private void closeDebugStream() {
