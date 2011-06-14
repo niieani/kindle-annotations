@@ -185,8 +185,14 @@ public class PDFAnnotator {
 			
 			final PDDocument inDocument = parser.getPDDocument();
 			//inDocument.decrypt(pass);
-			final PDDocumentOutline documentOutline = inDocument.getDocumentCatalog().getDocumentOutline();
+			PDDocumentOutline documentOutline = inDocument.getDocumentCatalog().getDocumentOutline();
 			
+			if(documentOutline == null) {
+				// if there is no document outline we have to create a new one.
+				documentOutline = new PDDocumentOutline();
+				inDocument.getDocumentCatalog().setDocumentOutline(documentOutline);
+			}
+		
 			assert documentOutline != null;
 			
 			int pageNumber = 0;
