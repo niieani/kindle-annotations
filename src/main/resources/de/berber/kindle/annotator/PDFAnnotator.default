@@ -1,5 +1,5 @@
-debugLevel       = DEBUG
-dumpDebugFile    = true
+debugLevel       = WARN
+dumpDebugFile    = false
 markings.color   = #FFFF00
 markings.opacity = 1.0
 comments.color   = #FFFF00
