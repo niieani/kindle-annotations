@@ -19,10 +19,10 @@ import java.io.File;
 
 import javax.annotation.Nonnull;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.log4j.Logger;
-
-import de.berber.kindle.annotator.lib.PDFAnnotator;
+import de.berber.kindle.annotator.controller.WorkCollector;
+import de.berber.kindle.annotator.model.Task;
+import de.berber.kindle.annotator.model.WorkingList;
+import de.berber.kindle.annotator.model.WorkingListListener;
 
 /**
  * The batch command line main program.
@@ -31,67 +31,40 @@ import de.berber.kindle.annotator.lib.PDFAnnotator;
  * 
  * @author Bernhard J. Berger
  */
-public class BatchMain extends AbstractMain {
-	/**
-	 * The log instance
-	 */
-	private final static Logger LOG = Logger.getLogger(Main.class);
+public class BatchMain extends AbstractMain implements WorkingListListener {
 
-	public BatchMain(final @Nonnull Options options,
-			         final @Nonnull CompositeConfiguration cc) {
-		super(options, cc);
+	private boolean worklistFinished = false;
+
+	public BatchMain(final @Nonnull Options options, final @Nonnull WorkingList model) {
+		super(options, model);
+		
+		model.addListener(this);
 	}
 
 	@Override
 	public void run() {
-		final File inputFile = new File(options.input);
-		File outputFile = new File(options.output);
+		final File inputFile = new File(options.input); // TODO Check 
+		final File outputFile = new File(options.output); // TODO Check 
+		final WorkCollector collector = new WorkCollector(inputFile, outputFile, model);
 
-		if (!inputFile.exists()) {
-			LOG.fatal("Input file does not exist.");
-			System.exit(1);
-		}
-
-		if (inputFile.isFile()) {
-			if (outputFile.exists() && outputFile.isDirectory()) {
-				outputFile = new File(outputFile.toString() + File.separator
-						+ inputFile.getName());
-			}
-			new PDFAnnotator(cc, options.input, options.output).run();
-		} else if (inputFile.isDirectory()) {
-			if (!outputFile.exists() || !outputFile.isDirectory()) {
-				LOG.error("Output file must be an existing directory.");
-				System.exit(1);
-			}
-
-			final File[] inputFiles = inputFile.listFiles();
-
-			for (int index = 0; index < inputFiles.length; ++index) {
-				final File currentFile = inputFiles[index];
-
-				if (!currentFile.isFile()) {
-					continue;
-				}
-
-				if (!currentFile.toString().endsWith(".pdf")) {
-					continue;
-				}
-
-				final File pdrFile = new File(currentFile.toString().substring(
-						0, currentFile.toString().lastIndexOf('.'))
-						+ ".pdr");
-
-				if (!pdrFile.exists()) {
-					continue;
-				}
-
-				final File output = new File(outputFile + File.separator
-						+ currentFile.getName());
-				LOG.info(currentFile.toString() + " --> " + output);
-				new PDFAnnotator(cc, currentFile.toString(), output.toString())
-						.run();
+		collector.run();
+		
+		while(!worklistFinished) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}
 
+	public void taskAdded(Task task) {
+	}
+
+	public void modelCleared() {
+	}
+
+	public void completedWorklist() {
+		worklistFinished = true;
+	}
 }

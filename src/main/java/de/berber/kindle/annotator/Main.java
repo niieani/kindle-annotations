@@ -28,8 +28,10 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.ExampleMode;
 
-import de.berber.kindle.annotator.gui.GUIMain;
+import de.berber.kindle.annotator.controller.WorkQueue;
+import de.berber.kindle.annotator.gui.MainWindow;
 import de.berber.kindle.annotator.lib.PDFAnnotator;
+import de.berber.kindle.annotator.model.WorkingList;
 
 /**
  * PDFAnnotator main class if you use it as an standalone commandline tool or
@@ -108,14 +110,20 @@ public class Main {
 
 			cc.addConfiguration(new PropertiesConfiguration(defaultURL));
 
-			AbstractMain main = null;
+	    	final WorkingList model = new WorkingList();
+	    	final WorkQueue queue = new WorkQueue(cc, model);
+
+	    	AbstractMain view = null;
 			if (options.noGUI) {
-				main = new BatchMain(options, cc);
+				view = new BatchMain(options, model);
 			} else {
-				main = new GUIMain(options, cc);
+				view = new MainWindow(options, model);
 			}
+			view.run();
 			
-			main.run();
+			if (options.noGUI) {
+				queue.stop();
+			}
 		} catch (Exception ex) {
 			LOG.error("Error while executing Kindle Annotator. Please report a bug.");
 			ex.printStackTrace();

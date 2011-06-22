@@ -18,6 +18,7 @@ package de.berber.kindle.annotator.gui;
 import java.awt.Dimension;
 import java.awt.Font;
 
+import javax.annotation.Nonnull;
 import javax.swing.JFrame;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
@@ -27,6 +28,7 @@ import javax.swing.BoxLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.Box;
 import javax.swing.JFileChooser;
@@ -35,7 +37,10 @@ import javax.swing.JList;
 import javax.swing.JTextField;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 
+import de.berber.kindle.annotator.AbstractMain;
+import de.berber.kindle.annotator.Options;
 import de.berber.kindle.annotator.controller.WorkCollector;
 import de.berber.kindle.annotator.model.Task;
 import de.berber.kindle.annotator.model.WorkingList;
@@ -48,13 +53,12 @@ import de.berber.kindle.annotator.model.WorkingListListener;
  * 
  * TODO Document me
  */
-public class MainWindow implements ActionListener, WorkingListListener {
+public class MainWindow extends AbstractMain implements ActionListener, WorkingListListener {
 
 	private JFrame frmPdfannotatorGui;
 	private JTextField inputTextField;
 	private JTextField outputTextField;
 	private JList fileList;
-	private WorkingList workingList;
 	private JButton selectInputBtn;
 	private JButton goBtn;
 	private JButton selectOutputBtn;
@@ -64,10 +68,10 @@ public class MainWindow implements ActionListener, WorkingListListener {
 	 * Create the application.
 	 * @param cc 
 	 */
-	public MainWindow(final WorkingList workingList) {
-		this.workingList = workingList;
+	public MainWindow(final @Nonnull Options options, final @Nonnull WorkingList model) {
+		super(options, model);
 		
-		workingList.addListener(this);
+		model.addListener(this);
 
 		initialize();
 	}
@@ -138,7 +142,7 @@ public class MainWindow implements ActionListener, WorkingListListener {
 		fileList = new JList();
 		fileList.setCellRenderer(new TaskCellRenderer());
 		fileList.setFont(new Font("Arial Black", Font.PLAIN, 20));
-		fileList.setModel(new ListModelAdapter(workingList));
+		fileList.setModel(new ListModelAdapter(model));
 		fileList.setFocusable(false);
 
 		
@@ -167,10 +171,6 @@ public class MainWindow implements ActionListener, WorkingListListener {
 		return button;
 	}
 
-	public void run() {
-		frmPdfannotatorGui.setVisible(true);
-	}
-	
 	static enum Action {
 		CLEAR,
 		GO,
@@ -191,7 +191,7 @@ public class MainWindow implements ActionListener, WorkingListListener {
 			case GO:
 				final File inputFile = new File(inputTextField.getText()); // TODO Check 
 				final File outputFile = new File(outputTextField.getText()); // TODO Check 
-				final WorkCollector collector = new WorkCollector(inputFile, outputFile, workingList);
+				final WorkCollector collector = new WorkCollector(inputFile, outputFile, model);
 				
 				setInteractionState(false);
 				
@@ -252,5 +252,20 @@ public class MainWindow implements ActionListener, WorkingListListener {
 	 */
 	public void completedWorklist() {
 		setInteractionState(true);
+	}
+
+	public void run() {
+        //Schedule a job for the event-dispatching thread:
+        //creating and showing this application's GUI.
+        try {
+			SwingUtilities.invokeAndWait(new Runnable() {
+			    public void run() {
+					frmPdfannotatorGui.setVisible(true);
+			}});
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		}
 	}
 }

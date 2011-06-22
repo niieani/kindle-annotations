@@ -17,7 +17,7 @@ package de.berber.kindle.annotator;
 
 import javax.annotation.Nonnull;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import de.berber.kindle.annotator.model.WorkingList;
 
 /**
  * An abstract main class for GUI and batch version.
@@ -26,24 +26,20 @@ import org.apache.commons.configuration.CompositeConfiguration;
  */
 public abstract class AbstractMain {
 	/**
-	 * The configuration object.
+	 * The model.
 	 */
-	protected CompositeConfiguration cc;
-	
+	protected WorkingList model;
+
 	/**
-	 * The command line options.
+	 * Commandline options
 	 */
 	protected Options options;
 	
-	/**
-	 * Default constructor.
-	 */
-	protected AbstractMain(final @Nonnull Options options,
-			               final @Nonnull CompositeConfiguration cc) {
-		this.cc = cc;
+	public AbstractMain(final @Nonnull Options options, final @Nonnull WorkingList model) {
 		this.options = options;
+		this.model   = model;
 	}
-	
+
 	/**
 	 * Runs the main process.
 	 */
