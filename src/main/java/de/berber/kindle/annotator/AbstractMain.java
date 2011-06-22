@@ -15,26 +15,37 @@
  */
 package de.berber.kindle.annotator;
 
-import org.kohsuke.args4j.Option;
+import javax.annotation.Nonnull;
+
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
- * All available command line options
+ * An abstract main class for GUI and batch version.
  * 
  * @author Bernhard J. Berger
  */
-public class Options {
-    @Option(name="-h", usage="Prints usage", aliases={"-help"})
-    boolean help;
-    
-	@Option(name="-c", usage="Specify a configuration properties file", aliases={"--config"})
-	public String config = null; 
+public abstract class AbstractMain {
+	/**
+	 * The configuration object.
+	 */
+	protected CompositeConfiguration cc;
 	
-	@Option(name="-i", usage="Specify an input PDF file or an input directory.", aliases={"--input"})
-	public String input = null;
-
-	@Option(name="-o", usage="Specify an output PDF file or an output directory.", aliases={"--output"})
-	public String output = null;
+	/**
+	 * The command line options.
+	 */
+	protected Options options;
 	
-	@Option(name="-n", usage="Do not show graphical user interface.", aliases={"--nogui"})
-	public boolean noGUI = false;
+	/**
+	 * Default constructor.
+	 */
+	protected AbstractMain(final @Nonnull Options options,
+			               final @Nonnull CompositeConfiguration cc) {
+		this.cc = cc;
+		this.options = options;
+	}
+	
+	/**
+	 * Runs the main process.
+	 */
+	public abstract void run();
 }
